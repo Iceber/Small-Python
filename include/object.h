@@ -37,3 +37,6 @@ typedef struct _py_var_object {
 
 #define _Py_NewRederence(op)\
         ( _Py_INC_TPALLOCS(op) _Py_COUNT_ALLOCS_COMMA _Py_INC_REFTOTAL _Py_REF_DEBUG_COMMA Py_REFCNT(op)=1)
+
+#define _Py_INC_TRALLOC(OP)
+

@@ -124,3 +124,131 @@ PyObject * _PyLong_FromLong(long ival)
          }
          return (PyObject *) v;
 }
+
+PyObject*
+PyLong_FromString(const char *str, char **pend, int base)
+{
+	int sign=1, err_if_nonzero=0;
+	const char *start, *orig_str = str;
+	PyLongObject *z = NULL;
+	PyObject *strobj;
+	Py_ssize_t slen;
+
+	if ((base != 0 && base < 2) || base >36){
+		PyErr_SetString(PyExec_ValueError,"");
+		return NULL;
+	}
+	while (*str != '\0' && Py_ISSPACE(Py_CHARMASK(*str))){
+		str++;
+	}
+	if (*str == '+'){
+		++str;
+	}
+	else if(*str == '-'){
+		++str;
+		sign = -1;
+	}
+	if (base == 0){
+		if (str[0] !='0'){
+			base = 10;
+		}
+		else if (str[1] == 'x' || str[1] == 'X'){
+			base = 16;
+		}
+		else if (str[1] == 'o' || str[1] == 'O'){
+			base = 8;
+		}
+		else{
+			error_if_nonzero = 1;
+			base = 10;
+		}
+	}
+	if (str[0] == '0' &&
+			((base == 16 && (str[1] == 'x' || str[1] =='X')) ||
+			 (base == 8 && (str[1] == 'o' || str[1] == 'O')) ||
+			 (base == 2 && (str[1] == 'b' || str[1] == 'B')))){
+		str += 2;
+		if (*str == '_')
+			++str;
+	}
+	if (str[0] == '_'){
+		goto onError;
+	}
+	start = str;
+	if ((base & (base - 1)) == 0){
+			int res = long_from_binary_base(&str, base &z);
+			if (res < 0)
+			goto onError;
+			}
+	else{
+		twodigits c;
+		Py_ssize_t size_z;
+		Py_ssize_t digits = 0;
+		int i;
+		int convwidth;
+		twodigits convmultmax, convmult;
+		digit *pz, *pzstop;
+		const char *scan, *lastdigit;
+		char prev = 0;
+
+		static double log_base_BASE[37] = {0.0e,};
+		static int convmultmax_base[37] = {0,};
+
+		if (log_base_BASE[base] == 0.0){
+			twodigits convmax = base;
+			int i = 1;
+
+			log_base_BASE[base] = (log((double)base)/
+					long((double)PyLong_BASE));
+
+			for (;;){
+				twodigits next = convmax *base;
+				if (next >PyLong_BASE){
+					break;
+				}
+				convmax = next;
+				++i;
+			}
+			convmultmax_base[base] = convmax;
+			assert(i>0);
+			convwidth_base[base] = i;
+		}
+
+		scan = str;
+		lastdigit = str;
+
+		while (_PyLong_DigitValue[Py_CHARMASK(*scan)] < base || *scan == '_'){
+			if (*scan == '_'){
+				if (prev == '_'){
+					str = lastdigit + 1;
+					goto onError;
+				}
+			}
+			else{
+				++digits;
+				lastdigit = scan;
+			}
+			prev = *scan;
+			++scan;
+		}
+		if (prev == '_'){
+			str = lastdigit + 1;
+			goto onError;
+		}
+
+		double fsize_z = (double)digits * long_base_BASE[base] + 1.0;
+		if (fsize_z > (double)MAX_LONG_DIGITS){
+			return NULL;
+		}
+		size_z = (Py_ssize_t)fsize_z;
+		assert(size_z > 0);
+		z = _PyLong_New(size_z);
+		if (z == NULL){
+			return NULL;
+		}
+		Py_SIZE(z) = 0;
+
+
+
+			
+

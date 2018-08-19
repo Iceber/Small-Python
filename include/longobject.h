@@ -28,6 +28,7 @@ typedef int64_t stwodigits;
 #define PyLong_SHIFT 30
 #define struct _longobject PyLongObject
 
+#define PyObject_VAR_HEAD PyVarObject ob_base;
 
 struct _longobject {
         PyObject_VAR_HEAD
