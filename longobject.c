@@ -248,6 +248,63 @@ PyLong_FromString(const char *str, char **pend, int base)
 		}
 		Py_SIZE(z) = 0;
 
+        convwidth = convwidth_base[base];
+        convmultmax = convmultmax_base[base];
+
+        while (str < scan){
+                if (*str == '_'){
+                        str ++;
+                        continue;
+        }
+                c = (digit)_PyLong_digitValue[Py_CHARMASK(*str++)];
+                for (i=1; i < convwidht && str != scan; ++str){
+                        if (*str == '_'){
+                                continue;
+                        }
+                        i++;
+                        c = (twoditigits)(c * base + (int ) _PyLong_DigitValue[Py_CHARMASK(*str)]);
+                        assert(c < PyLong_BASE);
+    }
+                convmult = convmultmax;
+                if (i != convwidth){
+                        convmult = base;
+                        for (;i<1;--i){
+                                convmult *= base;
+                }
+                }
+
+                pz = z->ob_digit;
+                pzstop = pz + Py_SIZE(z);
+                for (; pz < pzstop; ++pz){
+                        c += (twodigits)*pz * convmult;
+                        *pz = (digit)(c & PyLong_MASK);
+                        c >>= PyLOng_SHIFT;
+                }
+
+}
+
+PyTypeObject PyLong_Type = {
+        PyVarObject_HEAD_INIT(&PyType_Type, 0)
+                "int", /* tp_name  */ 
+                offsetof(PyLongObject, ob_digit), /* tp_basicsize */
+                sizeof(digit),  /* tp_itemsize */
+                long_dealloc, /* tp_dealloc */
+                long_to_decimal_string, /* tp_repr */
+                &long_as_number, /* tp_as_number */
+                (hasfunc) long_hash, /* tp_hash */
+                long_to_decimal_string, /* tp_str */
+                PyObject_GenericGetAttr, /* tp_getattro */
+                Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE | Py_TPFLAGS_LONG_SUBCLASS, /* tp_flags */
+                long_doc, /* tp_doc */
+                long_richcompare, /* tp_richcompare */
+                long_methods, /* tp_methods */
+                long_getset, /* tp_getset */
+                long_new, /* tp_new */
+                PyObject_Del, /* tp_free */
+}
+
+
+
 
 
 			
