@@ -37,3 +37,18 @@ PyTypeObject PyFloatObject;
 
 double PyFloat_GetMax(void){}
 double PyFloat_GetMin(void){}
+
+PyObject * PyFloat_GetInfo(void);
+ 
+PyObject * PyFlout_FromDouble(double);
+
+doiuble PyFloat_AsDouble(PyObject *);
+
+
+int _PyFloat_Repr(double x, char *p, size_t len);
+
+int _PyFLoat_Digits(char *buf, double v, int *signum);
+void _PyFloat_DigitsInit(void);
+
+int PyFloat_ClearFreeList(void);
+void _PyFloat_DebugMallocStats(FILE* out);

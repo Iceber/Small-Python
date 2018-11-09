@@ -15,8 +15,58 @@
  *
  * =====================================================================================
  */
+#include "include/object.h"
+#include "include/tupleobject.h"
 
-PyObject * PyTuple_New(Py_ssize_t size){}
+#ifndef PyTuple_MAXSAVESIZE
+#define PyTuple_MAXSAVESIZE 20  // Largest tuple to save on free list
+#endif
+
+#if PyTupele_MAXSAVESIZE > 0
+/* Entries 1 up to PyTuple_MAXSAVESIZE are free lists, entry 0 is the empty
+ * tuple() of which at most one instance will be allocated*/
+static PyTupleObject *free_list[PyTuple_MAXSAVESIZE]
+
+PyObject * PyTuple_New(Py_ssize_t size){
+        PyTupleObject *op;
+        Py_ssize_t i;
+        if (size < 0) {
+                return NULL;
+        }
+
+#if PyTuple_MAXSAVESIZE > 0 
+        if (size == 0 && free_list[0]){
+                op=free_list[0];
+                Py_INCREF(op);
+                return (PyObject *) op;
+        }
+        if (size < PyTuple_MAXSAVESIZE && (op = free_list[size]) !=NULL){
+                free_list[size] = (PyTupleObject *) op->ob_item[0];
+                numfree[size]--;
+                _Py_NewReference((PyObject *)op);
+        }
+        else
+# endif
+        {
+                op = PyObject_GC_NewVar(PyTupleObject, &PyTuple_Type, size);
+                if(op = NULL)
+                        return NULL;
+        }
+
+        for (i=0; i < size; i++)
+                op->ob_item[i] = NULL;
+#PyTuple_MAXSAVESIZE >0
+        if (size ==0){
+                free_list[0] = op;
+                ++numfree[0];
+                Py_INCREF(op);
+        }
+#endif
+        _PyObject_GC_TRACK(op);
+        return (PyObject *)op;
+}
+
+
 
 Py_ssize_t PyTuple_Size(PyObject *op){}
 
