@@ -32,7 +32,7 @@
 
 typedef struct _object {
         _PyObject_HEAD_EXTRA
-                Py_ssize_t ob_refcnt;
+        Py_ssize_t ob_refcnt;
         struct _typeobject *ob_type;
 } PyObject;
 
@@ -198,3 +198,67 @@ PyObject * PyObject_Repr(PyObject *);
 PyObject * PyObject_Str(PyObject *);
 PyObject * PyObject_ASCII(PyObject *);
 PyObject * PyObject_Bytes(PyObject *);
+
+int PyObject_RichCompareBool(PyObject *, PyObject *, int);
+#define _Py_INC_TPFREE(OP)
+#define _Py_COUNT_ALLOCS_COMMA
+#define _Py_DEC_REFTOTAL
+#define _Py_REF_DEBUG_COMMA
+#define _Py_CHECK_REFCNT(OP)
+
+#define _Py_Dealloc(op) (   \
+        _Py_INC_TPFREES(op) _Py_COUNT_ALLOCS_COMMA \
+                (*Py_TYPE(op)->tp_dealloc)((PyObject *)(op)))
+
+#define Py_INCREF(op) (  \
+                _Py_INC_REFTOTAL _Py_REF_DEBUG_COMMA    \
+                ((PyObject *)(op)) -> ob_refcnt++)
+#define Py_DECREF(op) (     \
+                do{         \
+                PyObject *_py_decref_temp = (PyObject *)(op);   \
+                if (_Py_DEC_REFTOTAL _Py_REF_DEBUG_COMMA        \
+                        --(_py_decref_tmp) -> ob_refcnt !=0) \
+                        _Py_CHECK_REFCNT(_py_decref_tmp)    \
+                 else                                       \
+                    _Py_Dealloc(_py_decref_tmp);        \
+                }while(0)
+
+#define Py_CLEAR(op) (       \
+        do {                \
+            PyObject *_py_tmp = (PyObject *) (op);  \
+            if (_py_tmp != NULL) {  \
+            (op) = NULL;        \
+            Py_DECREF(_Py_tmp); \
+            }           \
+        }while(0)
+
+// Macro to use in case the object pointer may be NULL:
+#define Py_XINCREF(op)       \
+        do {                \
+            PyObject *_py_xincref_tmp = (PyObject *)(op);   \
+            if (_py_xincref_tmp != NULL)        \
+                Py_INCREF(_py_xincref_tmp);         \
+        }while(0)
+
+#define Py_XDECREF(op)      \      
+        do {        \
+            PyObject *_py_xdecref_tmp = (PyObject *) (op);  \
+            if (_py_xdecref_tmp != NULL)    \
+                    Py_DECREF(_py_xdecref_tmp); \
+        }while(0)
+
+// Safely decref op and set op to op2
+
+#define Py_SETREF(op, op2)      \
+        do {        \
+                PyObject *py_tmp = (PyObject *)(op);    \
+                (op) = (op2);                           \
+                Py_DECREF(_py_tmp);                 \
+        }while(0)
+
+#define Py_XSETREF(op, op2)     \
+        do {        \
+                PyObject *py_tmp = (PyObject *)(op);    \
+                (op) = (op2);                   \
+                Py_XDECREF(_py_tmp);        \
+        }while(0)

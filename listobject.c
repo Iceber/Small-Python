@@ -23,11 +23,89 @@
 
 static int list_resize(PyListObject *self, Py_ssize_t newsize){}
 
+#ifndef PyList_MAXFREELIST
+#define PyListMAXFREELIST 80
+#endif
+
+static PyListObject * free_list[PyList_MAXFREELIST];
+static int numfree = 0;
+
+
+PyTypeObject PyList_Type = {
+        PyVarObject_HEAD_INIT(&PyType_Type, 0)
+                "list",
+        sizeof(PyListObject),
+        0,
+        (destructor)list_dealloc, // tp_dealloc
+        0,  // tp_print
+        0,  // tp_getattr
+        0,  // tp_setattr
+        0,  // tp_reserved
+        (reprfunc)list_repr,    // tp_repr
+        0,  // tp_as_number
+        &list_as_sequence,  //tp_as_sequence
+        &list_as_mapping,   // tp_as_mapping
+        PyObject_HashNotImplemented,    // tp_hash
+        0,  // tp_call
+        0,  // tp_str
+        PyObject_GenericGetAttr,    // tp_getattro
+        0,  // tp_setattro
+        0,  // tp_as_buffer
+        Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC | Py_TPFLAGS_BASETYPE | Py_TPFLAGS_LIST_SUBCLASS,   //tp_flags
+        list___init___doc__,    // tp_doc
+        (traverseproc)list_traverse,    // tp_traverse
+        (inquiry)_list_clear,   // tp_clear
+        list_richcompare,   // tp_richcompare
+        0,  //tp_weaklistoffset
+        list_iter,  // tp_iter
+        0,  // tp_iternext
+        list_methods,   // tp_methods
+        0,  // tp_members
+        0,  //tp_getset
+        0,  //tp_base
+        0,  //tp_dict
+        0,  // tp_descr_get
+        0,  // tp_descr_set
+        0,  // tp_dictoffset
+        (initproc)list___init__,    // tp_init
+        PyType_GenericAlloc,    //tp_alloc
+        PyType_GenericNew,  // tp_new
+        PyObject_GC_Del,    // tp_free
+};
 
 int PyList_ClearFreeList(void){}
 void PyList_Fini(void){}
 
-PyObject * PyList_New(Py_ssize_t size){}
+PyObject * PyList_New(Py_ssize_t size){
+        PyListObject *op;
+        if (size < 0){
+                return NULL;
+        }
+
+        if (numfree){
+                numfree--;
+                op = free_list[numfree];
+                _Py_NewReference((PyObject *)op);
+        }else{
+                op = PyObject_GC_New(PyListObject, &PyList_Type);
+                if (op == NULL)
+                        return NULL:
+        }
+        if (size <= 0)
+                op -> ob_item = NULL;
+        else{
+                op -> ob_item = (PyObject **) PyMem_Calloc(size, sizeof(PyObject *));
+                if (op -> ob_item == NULL){
+                        Py_DECREF(op);
+                        return Error;
+                }
+        }
+
+        Py_SIZE(op) = size;
+        op->allocated = size;
+        _PyObject_GC_TRACK(op);
+        return (PyObject *) op;
+}
 
 Py_ssize_t PyList_Size(PyObject *op){}
 
@@ -146,48 +224,6 @@ static int list___init___impl(PyListObject *self, PyObject *iterable){}
 // list.__sizeof__
 // Return the size of the list in memory, in bytes
 static PyObject * list___sizeof___impl(PyListObject *self){}
-
-PyTypeObject PyList_Type = {
-        PyVarObject_HEAD_INIT(&PyType_Type, 0)
-                "list",
-        sizeof(PyListObject),
-        0,
-        (destructor)list_dealloc, // tp_dealloc
-        0,  // tp_print
-        0,  // tp_getattr
-        0,  // tp_setattr
-        0,  // tp_reserved
-        (reprfunc)list_repr,    // tp_repr
-        0,  // tp_as_number
-        &list_as_sequence,  //tp_as_sequence
-        &list_as_mapping,   // tp_as_mapping
-        PyObject_HashNotImplemented,    // tp_hash
-        0,  // tp_call
-        0,  // tp_str
-        PyObject_GenericGetAttr,    // tp_getattro
-        0,  // tp_setattro
-        0,  // tp_as_buffer
-        Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC | Py_TPFLAGS_BASETYPE | Py_TPFLAGS_LIST_SUBCLASS,   //tp_flags
-        list___init___doc__,    // tp_doc
-        (traverseproc)list_traverse,    // tp_traverse
-        (inquiry)_list_clear,   // tp_clear
-        list_richcompare,   // tp_richcompare
-        0,  //tp_weaklistoffset
-        list_iter,  // tp_iter
-        0,  // tp_iternext
-        list_methods,   // tp_methods
-        0,  // tp_members
-        0,  //tp_getset
-        0,  //tp_base
-        0,  //tp_dict
-        0,  // tp_descr_get
-        0,  // tp_descr_set
-        0,  // tp_dictoffset
-        (initproc)list___init__,    // tp_init
-        PyType_GenericAlloc,    //tp_alloc
-        PyType_GenericNew,  // tp_new
-        PyObject_GC_Del,    // tp_free
-};
 
                
 

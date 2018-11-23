@@ -41,10 +41,37 @@ PyObject * PyObject_ASCII(PyObject *v){}
 
 PyObject * PyObject_Bytes(PyObject *v){}
 
-Py_hash_t PyObject_HashNotImplemented(PyObject *v){}
+Py_hash_t PyObject_HashNotImplemented(PyObject *v){
+        PyError_Format("unhashabble type");
+        return -1;
+}
 
-Py_hash_t PyObject_Hash(PyObject *v){}
+Py_hash_t PyObject_Hash(PyObject *v){
+        PyTypeObject *tp = Py_TYPE(v);
+        if (tp->tp_hash != NULL)
+                return (*tp->tp_hash)(v);
 
+        if (tp->tp_dict == NULL){
+                if (PyType_Read(tp) < 0)
+                        return -1;
+                if (tp->tp_hash != NULL)
+                        return(*tp->tp_hash)(v);
+        }
+        return PyObject_HashNotImplemented(v);
+}
+
+int PyObject_RichCompareBool(PyObject *v, PyObject *w, int op){
+        PyObject *res;
+        int ok;
+
+        if (v == w) {
+                if (op == Py_EQ)
+                        return 1;
+                else if (op == Py_NE)
+                        return 0;
+        }
+        res = PyObject_RichCompare(v, w, op)
+}
 PyObject *PyObject_GetAttrString(PytObject *v, const char *name){}
 
 int PyObject_HasAttrString(PyObject *v, const char *name){}
